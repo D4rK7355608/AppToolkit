@@ -21,12 +21,10 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -34,15 +32,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import com.d4rk.android.libs.apptoolkit.R
-import com.d4rk.android.libs.apptoolkit.app.support.billing.PurchaseResult
 import com.d4rk.android.libs.apptoolkit.app.support.billing.SupportScreenUiState
+import com.d4rk.android.libs.apptoolkit.app.support.domain.actions.SupportEvent
 import com.d4rk.android.libs.apptoolkit.core.domain.model.ads.AdsConfig
 import com.d4rk.android.libs.apptoolkit.core.ui.components.ads.AdBanner
 import com.d4rk.android.libs.apptoolkit.core.ui.components.modifiers.bounceClick
 import com.d4rk.android.libs.apptoolkit.core.ui.components.navigation.LargeTopAppBarWithScaffold
 import com.d4rk.android.libs.apptoolkit.core.ui.components.spacers.ButtonIconSpacer
+import com.d4rk.android.libs.apptoolkit.core.ui.components.snackbar.DefaultSnackbarHandler
 import com.d4rk.android.libs.apptoolkit.core.utils.constants.ui.SizeConstants
 import com.d4rk.android.libs.apptoolkit.core.utils.helpers.IntentsHelper
+import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.ScreenState
+import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.UiStateScreen
 import org.koin.compose.koinInject
 import org.koin.core.qualifier.named
 
@@ -53,25 +54,8 @@ fun SupportComposable(
     activity: Activity,
     adsConfig: AdsConfig = koinInject(qualifier = named(name = "banner_medium_rectangle"))
 ) {
-    val state: SupportScreenUiState by viewModel.uiState.collectAsState()
+    val screenState: UiStateScreen<SupportScreenUiState> by viewModel.uiState.collectAsState()
     val snackbarHostState: SnackbarHostState = rememberSnackbarHostState()
-
-    LaunchedEffect(Unit) {
-        viewModel.purchaseResult.collect { result ->
-            when (result) {
-                PurchaseResult.Pending -> snackbarHostState.showSnackbar(
-                    message = stringResource(id = R.string.purchase_pending)
-                )
-                PurchaseResult.Success -> snackbarHostState.showSnackbar(
-                    message = stringResource(id = R.string.purchase_thank_you)
-                )
-                is PurchaseResult.Failed -> snackbarHostState.showSnackbar(result.error)
-                PurchaseResult.UserCancelled -> snackbarHostState.showSnackbar(
-                    message = stringResource(id = R.string.purchase_cancelled)
-                )
-            }
-        }
-    }
 
     LargeTopAppBarWithScaffold(
         title = stringResource(id = R.string.support_us),
@@ -81,9 +65,15 @@ fun SupportComposable(
         SupportScreenContent(
             paddingValues = paddingValues,
             activity = activity,
-            state = state,
+            screenState = screenState,
             adsConfig = adsConfig,
             viewModel = viewModel
+        )
+        DefaultSnackbarHandler(
+            screenState = screenState,
+            snackbarHostState = snackbarHostState,
+            getDismissEvent = { SupportEvent.DismissSnackbar },
+            onEvent = { viewModel.onEvent(it) }
         )
     }
 }
@@ -92,12 +82,13 @@ fun SupportComposable(
 fun SupportScreenContent(
     paddingValues: PaddingValues,
     activity: Activity,
-    state: SupportScreenUiState,
+    screenState: UiStateScreen<SupportScreenUiState>,
     adsConfig: AdsConfig,
     viewModel: SupportViewModel
 ) {
     val view: View = LocalView.current
     val context: Context = LocalContext.current
+    val state = screenState.data ?: SupportScreenUiState()
     val productDetailsMap = state.products.associateBy { it.productId }
 
     Box(
@@ -106,12 +97,12 @@ fun SupportScreenContent(
             .fillMaxHeight()
     ) {
         when {
-            state.isLoading -> {
+            screenState.screenState is ScreenState.IsLoading -> {
                 androidx.compose.material3.CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            state.error != null -> {
+            screenState.screenState is ScreenState.Error && state.error != null -> {
                 Text(
                     text = state.error,
                     modifier = Modifier
