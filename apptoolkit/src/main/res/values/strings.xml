@@ -282,7 +282,4 @@
     <string name="non_paid_support">Non-Paid Support</string>
     <string name="web_ad">Web Ad</string>
     <string name="error_failed_to_load_sku_details">Failed to load SKU details</string>
-    <string name="purchase_pending">Your donation is being processed by Google. We will notify you when it's complete. Thank you!</string>
-    <string name="purchase_thank_you">Thank you for your donation!</string>
-    <string name="purchase_cancelled">Purchase cancelled</string>
 </resources>

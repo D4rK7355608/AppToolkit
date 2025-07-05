@@ -1,61 +1,60 @@
 package com.d4rk.android.libs.apptoolkit.app.support.ui
 
-import android.app.Activity
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.ProductDetails
-import com.d4rk.android.libs.apptoolkit.app.support.billing.BillingRepository
-import com.d4rk.android.libs.apptoolkit.app.support.billing.PurchaseResult
-import com.d4rk.android.libs.apptoolkit.app.support.billing.SupportScreenUiState
+import com.d4rk.android.libs.apptoolkit.R
+import com.d4rk.android.libs.apptoolkit.app.support.domain.actions.SupportAction
+import com.d4rk.android.libs.apptoolkit.app.support.domain.actions.SupportEvent
+import com.d4rk.android.libs.apptoolkit.app.support.domain.model.UiSupportScreen
+import com.d4rk.android.libs.apptoolkit.app.support.domain.usecases.QueryProductDetailsUseCase
 import com.d4rk.android.libs.apptoolkit.core.di.DispatcherProvider
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.update
+import com.d4rk.android.libs.apptoolkit.core.domain.model.network.DataState
+import com.d4rk.android.libs.apptoolkit.core.domain.model.network.Errors
+import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.ScreenState
+import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.UiStateScreen
+import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.applyResult
+import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateState
+import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
+import com.d4rk.android.libs.apptoolkit.core.utils.helpers.UiTextHelper
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.yield
 
 class SupportViewModel(
-    private val billingRepository: BillingRepository,
-    private val dispatcherProvider: DispatcherProvider
-) : ViewModel() {
+    private val queryProductDetailsUseCase : QueryProductDetailsUseCase,
+    private val dispatcherProvider : DispatcherProvider
+) : ScreenViewModel<UiSupportScreen , SupportEvent , SupportAction>(
+    initialState = UiStateScreen(data = UiSupportScreen())
+) {
 
-    val purchaseResult = billingRepository.purchaseResult
+    private var queryJob: Job? = null
 
-    private val _uiState = MutableStateFlow(SupportScreenUiState(isLoading = true))
-    val uiState: StateFlow<SupportScreenUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch(dispatcherProvider.io) {
-            billingRepository.productDetails.collectLatest { map ->
-                _uiState.update { current ->
-                    current.copy(isLoading = false, error = null, products = map.values.toList())
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            billingRepository.purchaseResult.collectLatest { result ->
-                if (result is PurchaseResult.Failed) {
-                    _uiState.update { it.copy(isLoading = false, error = result.error) }
-                }
-            }
-        }
-
-        viewModelScope.launch(dispatcherProvider.io) {
-            billingRepository.queryProductDetails(
-                listOf(
-                    "low_donation",
-                    "normal_donation",
-                    "high_donation",
-                    "extreme_donation"
-                )
-            )
+    override fun onEvent(event : SupportEvent) {
+        when (event) {
+            is SupportEvent.QueryProductDetails -> queryProductDetails(event.billingClient)
         }
     }
 
-    fun onDonateClicked(activity: Activity, productDetails: ProductDetails) {
-        billingRepository.launchPurchaseFlow(activity, productDetails)
+    private fun queryProductDetails(billingClient : BillingClient) {
+        if (!billingClient.isReady) return
+
+        queryJob?.cancel()
+        queryJob = launch(context = dispatcherProvider.io) {
+            val flow = queryProductDetailsUseCase(billingClient)
+            screenState.updateState(ScreenState.IsLoading())
+            // ensure observers see the loading state before work continues
+            yield()
+
+            flow
+                .flowOn(dispatcherProvider.default)
+                .collect { result: DataState<Map<String, ProductDetails>, Errors> ->
+                    screenState.applyResult(
+                        result = result,
+                        errorMessage = UiTextHelper.StringResource(R.string.error_failed_to_load_sku_details)
+                    ) { productMap, current ->
+                        current.copy(productDetails = productMap)
+                    }
+                }
+        }
     }
 }
-
