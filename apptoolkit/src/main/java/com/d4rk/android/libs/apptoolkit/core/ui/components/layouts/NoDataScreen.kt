@@ -50,8 +50,10 @@ fun NoDataScreen(
     onRetry: () -> Unit = {},
     showAd: Boolean = true,
     isError : Boolean = false,
-    adsConfig: AdsConfig = koinInject(qualifier = named(name = "banner_medium_rectangle"))
+    adsConfig: AdsConfig? = null,
 ) {
+    val adsConfigRemember: AdsConfig = adsConfig ?: koinInject(qualifier = named(name = "banner_medium_rectangle"))
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -85,11 +87,12 @@ fun NoDataScreen(
 
             LargeVerticalSpacer()
 
-            if(showAd) {
+            if (showAd) {
                 AdBanner(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = SizeConstants.MediumSize), adsConfig = adsConfig
+                        .padding(bottom = SizeConstants.MediumSize),
+                    adsConfig = adsConfigRemember
                 )
             }
         }

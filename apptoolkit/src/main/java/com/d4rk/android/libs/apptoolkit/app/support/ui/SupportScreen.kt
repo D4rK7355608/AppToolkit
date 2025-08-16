@@ -65,7 +65,7 @@ fun SupportComposable(
                 NoDataScreen(
                     icon = Icons.Outlined.MoneyOff,
                     isError = true,
-                    textMessage = R.string.error_failed_to_load_sku_details
+                    textMessage = R.string.error_failed_to_load_sku_details,
                 )
             },
             onSuccess = { data: SupportScreenUiState ->
@@ -73,7 +73,7 @@ fun SupportComposable(
                     paddingValues = paddingValues,
                     activity = activity,
                     viewModel = viewModel,
-                    data = data
+                    data = data,
                 )
             })
         DefaultSnackbarHandler(
@@ -91,9 +91,9 @@ fun SupportScreenContent(
     activity: Activity,
     viewModel: SupportViewModel,
     data: SupportScreenUiState,
-    adsConfig: AdsConfig = koinInject(qualifier = named(name = "banner_medium_rectangle"))
 ) {
     val context: Context = LocalContext.current
+    val adsConfig: AdsConfig = koinInject(qualifier = named(name = "banner_medium_rectangle"))
 
     val productDetailsMap = data.products.associateBy { it.productId }
     LazyColumn(

@@ -11,27 +11,22 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.map
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.d4rk.android.libs.apptoolkit.app.settings.utils.providers.BuildInfoProvider
 import com.d4rk.android.libs.apptoolkit.core.domain.model.ads.AdsConfig
 import com.d4rk.android.libs.apptoolkit.data.datastore.CommonDataStore
 import com.google.android.gms.ads.AdRequest
-import org.koin.compose.koinInject
 import com.d4rk.android.libs.apptoolkit.core.ui.components.ads.AdViewPool
 
 @Composable
-fun AdBanner(modifier : Modifier = Modifier , adsConfig : AdsConfig , buildInfoProvider : BuildInfoProvider = koinInject()) {
+fun AdBanner(modifier : Modifier = Modifier , adsConfig : AdsConfig) {
     val context: Context = LocalContext.current
     val dataStore: CommonDataStore = remember { CommonDataStore.getInstance(context = context) }
-    val showAds: Boolean? by dataStore.ads(default = !buildInfoProvider.isDebugBuild)
-        .map { it as Boolean? }
-        .collectAsStateWithLifecycle(initialValue = null)
+    val showAds: Boolean by dataStore.adsEnabledFlow.collectAsStateWithLifecycle()
 
-    if (showAds == true) {
+    if (showAds) {
         val adView = remember(adsConfig.bannerAdUnitId) {
             AdViewPool.acquire(context, adsConfig.bannerAdUnitId)
         }

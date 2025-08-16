@@ -13,7 +13,9 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.appopen.AppOpenAd
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 
 open class AdsCoreManager(protected val context : Context , val buildInfoProvider : BuildInfoProvider) {
@@ -77,8 +79,9 @@ open class AdsCoreManager(protected val context : Context , val buildInfoProvide
         suspend fun showAdIfAvailable(
             activity : Activity , onShowAdCompleteListener : OnShowAdCompleteListener
         ) {
-            val isAdsChecked : Boolean =
-                dataStore.ads(default = ! buildInfoProvider.isDebugBuild).first()
+            val isAdsChecked : Boolean = withContext(Dispatchers.IO) {
+                dataStore.ads(default = !buildInfoProvider.isDebugBuild).first()
+            }
 
             if (isShowingAd || ! isAdsChecked) {
                 return

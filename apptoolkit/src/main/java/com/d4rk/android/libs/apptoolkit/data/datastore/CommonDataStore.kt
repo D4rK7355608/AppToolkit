@@ -12,8 +12,13 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.d4rk.android.libs.apptoolkit.core.utils.constants.datastore.DataStoreNamesConstants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 val Context.commonDataStore : DataStore<Preferences> by preferencesDataStore(name = DataStoreNamesConstants.DATA_STORE_SETTINGS)
 
@@ -29,6 +34,7 @@ val Context.commonDataStore : DataStore<Preferences> by preferencesDataStore(nam
  */
 open class CommonDataStore(context : Context) {
     val dataStore : DataStore<Preferences> = context.commonDataStore
+    private val scope = CoroutineScope(context = Dispatchers.IO)
 
     companion object {
         @Volatile
@@ -201,6 +207,12 @@ open class CommonDataStore(context : Context) {
     fun ads(default : Boolean) : Flow<Boolean> = dataStore.data.map { prefs : Preferences ->
         prefs[adsKey] ?: default
     }
+    val adsEnabledFlow: StateFlow<Boolean> =
+        ads(default = true).stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = true
+        )
 
     suspend fun saveAds(isChecked : Boolean) {
         dataStore.edit { preferences : MutablePreferences ->
