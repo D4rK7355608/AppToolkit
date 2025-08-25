@@ -24,7 +24,7 @@ class TestAppsListViewModel : TestAppsListViewModelBase() {
             emit(DataState.Loading<List<AppInfo>, Error>())
             emit(DataState.Success<List<AppInfo>, Error>(apps))
         }
-        setup(fetchFlow = flow)
+        setup(fetchFlow = flow, dispatcher = dispatcherExtension.testDispatcher)
         viewModel.uiState.testSuccess(expectedSize = apps.size)
     }
 
@@ -33,7 +33,7 @@ class TestAppsListViewModel : TestAppsListViewModelBase() {
         val flow = flow {
             emit(DataState.Success<List<AppInfo>, Error>(listOf(AppInfo("App", "pkg", "url"))))
         }
-        setup(fetchFlow = flow)
+        setup(fetchFlow = flow, dispatcher = dispatcherExtension.testDispatcher)
         toggleAndAssert(packageName = "pkg", expected = true)
         toggleAndAssert(packageName = "pkg", expected = false)
     }
@@ -43,7 +43,7 @@ class TestAppsListViewModel : TestAppsListViewModelBase() {
         val flow = flow {
             emit(DataState.Success<List<AppInfo>, Error>(listOf(AppInfo("App", "pkg", "url"))))
         }
-        setup(fetchFlow = flow, initialFavorites = setOf("pkg"))
+        setup(fetchFlow = flow, initialFavorites = setOf("pkg"), dispatcher = dispatcherExtension.testDispatcher)
         toggleAndAssert(packageName = "pkg", expected = false)
     }
 }

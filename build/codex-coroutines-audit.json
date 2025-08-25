@@ -1,0 +1,58 @@
+[
+  {
+    "testClass": "app/src/test/java/com/d4rk/android/apps/apptoolkit/app/apps/list/TestAppsListViewModel.kt",
+    "coroutines": "Exercises AppsListViewModel flow collection and favorite toggling via ToggleFavoriteUseCase",
+    "determinism": "Injects TestDispatcher into view model and use case; uses advanceUntilIdle to drive scheduler",
+    "emissions": "uiState emits Loading then Success for list; favorites flow reflects toggles",
+    "risks": "None"
+  },
+  {
+    "testClass": "app/src/test/java/com/d4rk/android/apps/apptoolkit/app/apps/favorites/TestFavoriteAppsViewModel.kt",
+    "coroutines": "Validates FavoriteAppsViewModel favorites updates and error handling",
+    "determinism": "Dispatcher injected; advanceUntilIdle replaces arbitrary delays",
+    "emissions": "Favorites flow updates synchronously after toggle",
+    "risks": "None"
+  },
+  {
+    "testClass": "apptoolkit/src/test/java/com/d4rk/android/libs/apptoolkit/app/settings/settings/ui/TestSettingsViewModel.kt",
+    "coroutines": "Loads settings config on event and updates state",
+    "determinism": "View model accepts dispatcher; tests run with UnconfinedTestDispatcher and advanceUntilIdle",
+    "emissions": "Success test emits updated title; empty config emits NoData state",
+    "risks": "None"
+  },
+  {
+    "testClass": "apptoolkit/src/test/java/com/d4rk/android/libs/apptoolkit/app/permissions/ui/TestPermissionsViewModel.kt",
+    "coroutines": "Loads permissions config and handles failure",
+    "determinism": "Dispatcher injected and advanceUntilIdle used after events",
+    "emissions": "Success path yields updated data; failure path sets Error state",
+    "risks": "None"
+  },
+  {
+    "testClass": "apptoolkit/src/test/java/com/d4rk/android/libs/apptoolkit/app/issuereporter/ui/TestIssueReporterViewModel.kt",
+    "coroutines": "Verifies IssueReporterViewModel flow emissions for various network responses",
+    "determinism": "Uses StandardDispatcherExtension and scheduler advancement to control async work",
+    "emissions": "Flow emits loading then success/error states per scenario",
+    "risks": "External network delay simulated via test scheduler"
+  },
+  {
+    "testClass": "apptoolkit/src/test/java/com/d4rk/android/libs/apptoolkit/app/support/ui/SupportViewModelTest.kt",
+    "coroutines": "Asserts StateFlow updates from mocked billing repository",
+    "determinism": "Unconfined dispatcher replaced with TestDispatcher; emissions asserted via Turbine",
+    "emissions": "Initial loading followed by success or error transitions",
+    "risks": "None"
+  },
+  {
+    "testClass": "apptoolkit/src/test/java/com/d4rk/android/libs/apptoolkit/app/settings/general/ui/TestGeneralSettingsViewModel.kt",
+    "coroutines": "Checks general settings loading and error flows",
+    "determinism": "Runs under StandardDispatcherExtension with explicit scheduler advancement",
+    "emissions": "Loading -> Success/NoData/Error as per content",
+    "risks": "None"
+  },
+  {
+    "testClass": "apptoolkit/src/test/java/com/d4rk/android/libs/apptoolkit/app/about/ui/TestAboutViewModel.kt",
+    "coroutines": "Verifies snackbar flow for copy actions",
+    "determinism": "Controlled by StandardDispatcherExtension; uses Turbine to assert emissions",
+    "emissions": "Success state with snackbar show/dismiss sequences",
+    "risks": "None"
+  }
+]

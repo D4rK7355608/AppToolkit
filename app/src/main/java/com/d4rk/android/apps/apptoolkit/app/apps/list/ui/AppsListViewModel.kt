@@ -19,6 +19,7 @@ import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.UiSnackbar
 import com.d4rk.android.libs.apptoolkit.core.utils.helpers.UiTextHelper
 import com.d4rk.android.libs.apptoolkit.core.utils.constants.ui.ScreenMessageType
 import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +37,8 @@ import kotlinx.coroutines.withContext
 class AppsListViewModel(
     private val fetchDeveloperAppsUseCase : FetchDeveloperAppsUseCase,
     private val observeFavoritesUseCase: ObserveFavoritesUseCase,
-    private val toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ScreenViewModel<UiHomeScreen , HomeEvent , HomeAction>(initialState = UiStateScreen(screenState = ScreenState.IsLoading() , data = UiHomeScreen())) {
 
     private val _favorites = MutableStateFlow<Set<String>>(emptySet())
@@ -49,7 +51,7 @@ class AppsListViewModel(
     )
 
     init {
-        viewModelScope.launch(context = Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) {
+        viewModelScope.launch(context = ioDispatcher, start = CoroutineStart.UNDISPATCHED) {
             runCatching {
                 observeFavoritesUseCase()
                     .onEach {
@@ -60,7 +62,7 @@ class AppsListViewModel(
             }
         }
 
-        viewModelScope.launch(context = Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) {
+        viewModelScope.launch(context = ioDispatcher, start = CoroutineStart.UNDISPATCHED) {
             favoritesLoaded.filter { it }.first()
             onEvent(HomeEvent.FetchApps)
         }
@@ -73,8 +75,8 @@ class AppsListViewModel(
     }
 
     private fun fetchDeveloperApps() {
-        viewModelScope.launch(context = Dispatchers.IO) {
-            fetchDeveloperAppsUseCase().flowOn(Dispatchers.IO).collect { result : DataState<List<AppInfo> , RootError> ->
+        viewModelScope.launch(context = ioDispatcher) {
+            fetchDeveloperAppsUseCase().flowOn(ioDispatcher).collect { result : DataState<List<AppInfo> , RootError> ->
                 when (result) {
                     is DataState.Success -> {
                         val apps = result.data
@@ -116,7 +118,7 @@ class AppsListViewModel(
     }
 
     fun toggleFavorite(packageName: String) {
-        viewModelScope.launch(context = Dispatchers.IO) {
+        viewModelScope.launch(context = ioDispatcher) {
             runCatching {
                 toggleFavoriteUseCase(packageName)
             }.onFailure { error ->

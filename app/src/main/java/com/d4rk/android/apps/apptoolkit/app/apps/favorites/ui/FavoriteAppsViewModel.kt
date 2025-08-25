@@ -14,6 +14,7 @@ import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.UiStateScreen
 import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateData
 import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateState
 import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,7 @@ class FavoriteAppsViewModel(
     private val fetchDeveloperAppsUseCase: FetchDeveloperAppsUseCase,
     private val observeFavoritesUseCase: ObserveFavoritesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
  ) : ScreenViewModel<UiHomeScreen, FavoriteAppsEvent, FavoriteAppsAction>(
     initialState = UiStateScreen(screenState = IsLoading(), data = UiHomeScreen())
 ) {
@@ -47,7 +49,7 @@ class FavoriteAppsViewModel(
     )
 
     init {
-        viewModelScope.launch(context = Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) {
+        viewModelScope.launch(context = ioDispatcher, start = CoroutineStart.UNDISPATCHED) {
             runCatching {
                 observeFavoritesUseCase()
                     .onEach {
@@ -58,7 +60,7 @@ class FavoriteAppsViewModel(
             }
         }
 
-        viewModelScope.launch(context = Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) {
+        viewModelScope.launch(context = ioDispatcher, start = CoroutineStart.UNDISPATCHED) {
             favoritesLoaded
                 .filter { it }
                 .first()
@@ -74,11 +76,11 @@ class FavoriteAppsViewModel(
 
     private fun loadFavorites() {
         viewModelScope.launch(
-            context = Dispatchers.IO,
+            context = ioDispatcher,
             start = CoroutineStart.UNDISPATCHED
         ) {
             combine(
-                flow = fetchDeveloperAppsUseCase().flowOn(Dispatchers.IO),
+                flow = fetchDeveloperAppsUseCase().flowOn(ioDispatcher),
                 flow2 = favorites
             ) { dataState, favsSet ->
                 dataState to favsSet
@@ -119,7 +121,7 @@ class FavoriteAppsViewModel(
     }
 
     fun toggleFavorite(packageName: String) {
-        viewModelScope.launch(context = Dispatchers.IO) {
+        viewModelScope.launch(context = ioDispatcher) {
             runCatching {
                 toggleFavoriteUseCase(packageName)
             }

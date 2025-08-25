@@ -14,12 +14,16 @@ import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.successData
 import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateState
 import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
 import com.d4rk.android.libs.apptoolkit.core.utils.helpers.UiTextHelper
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class PermissionsViewModel(private val settingsProvider: PermissionsProvider) :
+class PermissionsViewModel(
+    private val settingsProvider: PermissionsProvider,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) :
     ScreenViewModel<SettingsConfig, PermissionsEvent, PermissionsAction>(
         initialState = UiStateScreen(data = SettingsConfig(title = "", categories = emptyList()))
     ) {
@@ -33,7 +37,7 @@ class PermissionsViewModel(private val settingsProvider: PermissionsProvider) :
     private fun loadPermissions(context: Context) {
         viewModelScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) {
+                withContext(dispatcher) {
                     settingsProvider.providePermissionsConfig(context = context)
                 }
             }.onSuccess { result: SettingsConfig ->

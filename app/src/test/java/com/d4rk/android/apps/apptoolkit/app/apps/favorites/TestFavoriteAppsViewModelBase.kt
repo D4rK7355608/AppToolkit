@@ -18,8 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +38,8 @@ open class TestFavoriteAppsViewModelBase {
         fetchFlow: Flow<DataState<List<AppInfo>, RootError>>,
         initialFavorites: Set<String> = emptySet(),
         favoritesFlow: Flow<Set<String>>? = null,
-        toggleError: Throwable? = null
+        toggleError: Throwable? = null,
+        dispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Main
     ) {
         println("\uD83E\uDDEA [SETUP] Initial favorites: $initialFavorites")
         fetchUseCase = mockk()
@@ -70,12 +70,13 @@ open class TestFavoriteAppsViewModelBase {
         coEvery { fetchUseCase.invoke() } returns fetchFlow
 
         val observeFavoritesUseCase = ObserveFavoritesUseCase(favoritesRepository)
-        val toggleFavoriteUseCase = ToggleFavoriteUseCase(favoritesRepository, dispatcher = Dispatchers.IO)
+        val toggleFavoriteUseCase = ToggleFavoriteUseCase(favoritesRepository, dispatcher)
 
         viewModel = FavoriteAppsViewModel(
             fetchDeveloperAppsUseCase = fetchUseCase,
             observeFavoritesUseCase = observeFavoritesUseCase,
-            toggleFavoriteUseCase = toggleFavoriteUseCase
+            toggleFavoriteUseCase = toggleFavoriteUseCase,
+            ioDispatcher = dispatcher
         )
         println("\u2705 [SETUP] ViewModel initialized")
     }
@@ -139,11 +140,7 @@ open class TestFavoriteAppsViewModelBase {
         println("Favorites before: ${viewModel.favorites.value}")
         viewModel.toggleFavorite(packageName)
         println("\uD83D\uDD04 [ACTION] toggled $packageName")
-        withTimeout(100) {
-            while (viewModel.favorites.value.contains(packageName) != expected) {
-                delay(1)
-            }
-        }
+        advanceUntilIdle()
         val favorites = viewModel.favorites.value
         println("Favorites after: $favorites")
         if (favorites.contains(packageName) == expected) {

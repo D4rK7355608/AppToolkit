@@ -15,11 +15,15 @@ import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.successData
 import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateState
 import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
 import com.d4rk.android.libs.apptoolkit.core.utils.helpers.UiTextHelper
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SettingsViewModel(private val settingsProvider : SettingsProvider) : ScreenViewModel<SettingsConfig , SettingsEvent , SettingsAction>(initialState = UiStateScreen(data = SettingsConfig(title = "" , categories = emptyList()))) {
+class SettingsViewModel(
+    private val settingsProvider : SettingsProvider,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ScreenViewModel<SettingsConfig , SettingsEvent , SettingsAction>(initialState = UiStateScreen(data = SettingsConfig(title = "" , categories = emptyList()))) {
 
     override fun onEvent(event : SettingsEvent) {
         when (event) {
@@ -29,7 +33,7 @@ class SettingsViewModel(private val settingsProvider : SettingsProvider) : Scree
 
     private fun loadSettings(context: Context) {
         viewModelScope.launch {
-            val result: SettingsConfig = withContext(Dispatchers.IO) {
+            val result: SettingsConfig = withContext(dispatcher) {
                 settingsProvider.provideSettingsConfig(context = context)
             }
             if (result.categories.isNotEmpty()) {

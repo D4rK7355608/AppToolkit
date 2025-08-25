@@ -17,8 +17,8 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.cancel
 import androidx.lifecycle.viewModelScope
 import org.junit.jupiter.api.AfterEach
@@ -38,7 +38,8 @@ open class TestAppsListViewModelBase {
         initialFavorites: Set<String> = emptySet(),
         favoritesFlow: Flow<Set<String>>? = null,
         toggleError: Throwable? = null,
-        fetchThrows: Throwable? = null
+        fetchThrows: Throwable? = null,
+        dispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Main,
     ) {
         println("\uD83E\uDDEA [SETUP] Initial favorites: $initialFavorites")
         fetchUseCase = mockk()
@@ -68,9 +69,9 @@ open class TestAppsListViewModelBase {
         }
 
         val observeFavoritesUseCase = ObserveFavoritesUseCase(favoritesRepository)
-        val toggleFavoriteUseCase = ToggleFavoriteUseCase(favoritesRepository)
+        val toggleFavoriteUseCase = ToggleFavoriteUseCase(favoritesRepository, dispatcher)
 
-        viewModel = AppsListViewModel(fetchUseCase, observeFavoritesUseCase, toggleFavoriteUseCase)
+        viewModel = AppsListViewModel(fetchUseCase, observeFavoritesUseCase, toggleFavoriteUseCase, dispatcher)
         println("\u2705 [SETUP] ViewModel initialized")
     }
 
@@ -133,11 +134,7 @@ open class TestAppsListViewModelBase {
         println("Favorites before: ${viewModel.favorites.value}")
         viewModel.toggleFavorite(packageName)
         println("\uD83D\uDD04 [ACTION] toggled $packageName")
-        withTimeout(100) {
-            while (viewModel.favorites.value.contains(packageName) != expected) {
-                delay(1)
-            }
-        }
+        advanceUntilIdle()
         val favorites = viewModel.favorites.value
         println("Favorites after: $favorites")
         if (favorites.contains(packageName) == expected) {
