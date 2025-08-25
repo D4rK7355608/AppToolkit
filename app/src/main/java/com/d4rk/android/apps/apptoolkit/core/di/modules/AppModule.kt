@@ -29,7 +29,7 @@ val appModule : Module = module {
     single<AdsCoreManager> { AdsCoreManager(context = get() , get()) }
     single { KtorClient().createClient(enableLogging = BuildConfig.DEBUG) }
 
-    single<FavoritesRepository> { FavoritesRepositoryImpl(dataStore = get()) }
+    single<FavoritesRepository> { FavoritesRepositoryImpl(context = get(), dataStore = get()) }
     single { ObserveFavoritesUseCase(repository = get()) }
     single { ToggleFavoriteUseCase(repository = get(), dispatcher = Dispatchers.IO) }
 

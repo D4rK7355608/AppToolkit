@@ -22,6 +22,7 @@ import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateState
 import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
 import com.d4rk.android.libs.apptoolkit.core.utils.constants.ui.ScreenMessageType
 import com.d4rk.android.libs.apptoolkit.core.utils.helpers.UiTextHelper
+import kotlinx.coroutines.flow.update
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.launch
 
@@ -117,49 +118,56 @@ class IssueReporterViewModel(
                 onSuccess = { outcome ->
                     when (outcome) {
                         is IssueReportResult.Success -> {
-                            screenState.updateData(screenState.value.screenState) { current ->
-                                current.copy(issueUrl = outcome.url)
-                            }
-                            screenState.showSnackbar(
-                                snackbar = UiSnackbar(
-                                    message = UiTextHelper.StringResource(R.string.snack_report_success),
-                                    isError = false,
-                                    timeStamp = System.currentTimeMillis(),
-                                    type = ScreenMessageType.SNACKBAR,
+                            screenState.update { current ->
+                                val updated = current.data?.copy(issueUrl = outcome.url)
+                                current.copy(
+                                    screenState = ScreenState.Success(),
+                                    data = updated,
+                                    snackbar = UiSnackbar(
+                                        message = UiTextHelper.StringResource(R.string.snack_report_success),
+                                        isError = false,
+                                        timeStamp = System.currentTimeMillis(),
+                                        type = ScreenMessageType.SNACKBAR,
+                                    )
                                 )
-                            )
-                            screenState.updateState(ScreenState.Success())
+                            }
                         }
 
                         is IssueReportResult.Error -> {
-                            screenState.showSnackbar(
-                                snackbar = UiSnackbar(
-                                    message = when (outcome.status) {
-                                        HttpStatusCode.Unauthorized -> UiTextHelper.StringResource(R.string.error_unauthorized)
-                                        HttpStatusCode.Forbidden -> UiTextHelper.StringResource(R.string.error_forbidden)
-                                        HttpStatusCode.Gone -> UiTextHelper.StringResource(R.string.error_gone)
-                                        HttpStatusCode.UnprocessableEntity -> UiTextHelper.StringResource(R.string.error_unprocessable)
-                                        else -> UiTextHelper.StringResource(R.string.snack_report_failed)
-                                    },
-                                    isError = true,
-                                    timeStamp = System.currentTimeMillis(),
-                                    type = ScreenMessageType.SNACKBAR,
+                            val msg = when (outcome.status) {
+                                HttpStatusCode.Unauthorized -> UiTextHelper.StringResource(R.string.error_unauthorized)
+                
+                                HttpStatusCode.Forbidden -> UiTextHelper.StringResource(R.string.error_forbidden)
+                                HttpStatusCode.Gone -> UiTextHelper.StringResource(R.string.error_gone)
+                                HttpStatusCode.UnprocessableEntity -> UiTextHelper.StringResource(R.string.error_unprocessable)
+                                else -> UiTextHelper.StringResource(R.string.snack_report_failed)
+                            }
+                            screenState.update { current ->
+                                current.copy(
+                                    screenState = ScreenState.Error(),
+                                    snackbar = UiSnackbar(
+                                        message = msg,
+                                        isError = true,
+                                        timeStamp = System.currentTimeMillis(),
+                                        type = ScreenMessageType.SNACKBAR,
+                                    )
                                 )
-                            )
-                            screenState.updateState(ScreenState.Error())
+                            }
                         }
                     }
                 },
                 onFailure = {
-                    screenState.showSnackbar(
-                        snackbar = UiSnackbar(
-                            message = UiTextHelper.StringResource(R.string.snack_report_failed),
-                            isError = true,
-                            timeStamp = System.currentTimeMillis(),
-                            type = ScreenMessageType.SNACKBAR,
+                    screenState.update { current ->
+                        current.copy(
+                            screenState = ScreenState.Error(),
+                            snackbar = UiSnackbar(
+                                message = UiTextHelper.StringResource(R.string.snack_report_failed),
+                                isError = true,
+                                timeStamp = System.currentTimeMillis(),
+                                type = ScreenMessageType.SNACKBAR,
+                            )
                         )
-                    )
-                    screenState.updateState(ScreenState.Error())
+                    }
                 }
             )
         }

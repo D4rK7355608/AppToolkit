@@ -5,8 +5,6 @@ import com.d4rk.android.libs.apptoolkit.app.issuereporter.domain.model.IssueRepo
 import com.d4rk.android.libs.apptoolkit.app.issuereporter.domain.model.Report
 import com.d4rk.android.libs.apptoolkit.app.issuereporter.domain.model.github.GithubTarget
 import com.d4rk.android.libs.apptoolkit.core.domain.usecases.Repository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class SendIssueReportUseCase(
     private val repository: IssueReporterRepository
@@ -19,9 +17,7 @@ class SendIssueReportUseCase(
     )
 
     override suspend fun invoke(param: Params): Result<IssueReportResult> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                repository.sendReport(param.report, param.target, param.token)
-            }
+        runCatching {
+            repository.sendReport(param.report, param.target, param.token)
         }
 }

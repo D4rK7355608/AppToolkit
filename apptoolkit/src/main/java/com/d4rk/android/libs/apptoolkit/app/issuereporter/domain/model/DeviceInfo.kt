@@ -3,8 +3,6 @@ package com.d4rk.android.libs.apptoolkit.app.issuereporter.domain.model
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class DeviceInfo(context: Context) {
     private var versionCode: Int = -1
@@ -33,11 +31,9 @@ class DeviceInfo(context: Context) {
     companion object {
         suspend fun create(context: Context): DeviceInfo {
             val info = DeviceInfo(context)
-            val packageInfo = withContext(Dispatchers.IO) {
-                runCatching {
-                    context.packageManager.getPackageInfo(context.packageName, 0)
-                }.getOrNull()
-            }
+            val packageInfo = runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }.getOrNull()
 
             @Suppress("DEPRECATION")
             info.versionCode = packageInfo?.versionCode ?: -1

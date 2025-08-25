@@ -19,10 +19,8 @@ import com.d4rk.android.libs.apptoolkit.core.domain.model.ui.updateData
 import com.d4rk.android.libs.apptoolkit.core.ui.base.ScreenViewModel
 import com.d4rk.android.libs.apptoolkit.core.utils.constants.ui.ScreenMessageType
 import com.d4rk.android.libs.apptoolkit.core.utils.helpers.UiTextHelper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class SupportViewModel(
     private val billingRepository: BillingRepository,
@@ -34,12 +32,10 @@ class SupportViewModel(
 ) {
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             billingRepository.productDetails.collectLatest { map ->
-                withContext(Dispatchers.Main) {
-                    screenState.updateData(newState = ScreenState.Success()) { current ->
-                        current.copy(error = null, products = map.values.toList())
-                    }
+                screenState.updateData(newState = ScreenState.Success()) { current ->
+                    current.copy(error = null, products = map.values.toList())
                 }
             }
         }
@@ -91,7 +87,7 @@ class SupportViewModel(
             }
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             billingRepository.queryProductDetails(
                 listOf(
                     DonationProductIds.LOW_DONATION,
@@ -105,7 +101,7 @@ class SupportViewModel(
 
     override fun onEvent(event: SupportEvent) {
         when (event) {
-            is SupportEvent.QueryProductDetails -> viewModelScope.launch(Dispatchers.IO) {
+            is SupportEvent.QueryProductDetails -> viewModelScope.launch {
                 billingRepository.queryProductDetails(
                     listOf(
                         DonationProductIds.LOW_DONATION,
